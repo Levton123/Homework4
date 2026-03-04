@@ -40,6 +40,15 @@ FavouriteRepository предоставляет Flow из Room DAO. Любое и
 <img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/f6fc6896-8735-4030-bd50-6d140d1f2aa1" />
 
 (скриншот списка)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/24a4bff3-6125-4935-b0ec-50b1250da60c" />
+
 (скриншот детального экрана)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/6dd3aa10-5ba9-4288-9f96-99afe934abdb" />
+
 (скриншот избранного)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/2781a63a-2fb7-4448-adb2-533cf35860a0" />
+
 (скриншот ошибки с кнопкой Retry)
