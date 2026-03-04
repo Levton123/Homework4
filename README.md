@@ -4,7 +4,6 @@
 **Группа:** Б9123-09.03.01 цд  
 **API:** [PokeAPI](https://pokeapi.co/) — бесплатный открытый RESTful API без ключей
 
-
 ## Что хранится в Room
 
 **Таблица:** `favourites`
@@ -17,7 +16,6 @@
 
 **Сценарий: Favourites** — избранное переживает перезапуск приложения.  
 `FavouriteRepository` предоставляет `Flow<List<Int>>` из Room DAO. Любое изменение в БД автоматически уведомляет `PokemonListViewModel` через подписку — без ручной синхронизации.
-
 
 ## Как проверить
 
@@ -37,7 +35,6 @@
 - **`PokemonApplication`** — `@HiltAndroidApp`
 - **`ViewModelFactories.kt`** — удалён (Hilt заменяет)
 - **`RetrofitClient.kt`** — удалён (перенесён в `AppModule`)
-
 
 ## Скриншоты
 
