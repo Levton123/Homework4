@@ -32,8 +32,12 @@ FavouriteRepository предоставляет Flow из Room DAO. Любое и
 - RetrofitClient.kt — удалён (перенесён в AppModule)
 
 Скриншоты
+
 <img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/0a07168a-85b8-4e38-9de6-c96d8cadacf9" />
+
 (скриншот Loading)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/f6fc6896-8735-4030-bd50-6d140d1f2aa1" />
 
 (скриншот списка)
 (скриншот детального экрана)
