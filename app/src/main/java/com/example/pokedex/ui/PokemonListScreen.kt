@@ -1,4 +1,4 @@
-package com.example.pokedex.ui.screen
+package com.example.pokedex.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,8 +17,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.pokedex.data.model.PokemonListItem
-import com.example.pokedex.ui.state.PokemonListUiState
-import com.example.pokedex.ui.viewmodel.PokemonListEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,8 +26,7 @@ fun PokemonListScreen(
     onPokemonClick: (Int) -> Unit,
     onFavouritesClick: () -> Unit
 ) {
-    val initialQuery = (uiState as? PokemonListUiState.Success)?.searchQuery ?: ""
-    var searchQuery by remember { mutableStateOf(initialQuery) }
+    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -73,8 +70,9 @@ fun PokemonListScreen(
                     pokemonList = uiState.pokemonList,
                     favourites = uiState.favourites,
                     onPokemonClick = onPokemonClick,
-                    onFavouriteClick = { id, name ->
-                        onEvent(PokemonListEvent.ToggleFavourite(id, name))
+                    onFavouriteClick = { id, name, isFavourite ->
+                        if (isFavourite) onEvent(PokemonListEvent.RemoveFavourite(id))
+                        else onEvent(PokemonListEvent.AddFavourite(id, name))
                     }
                 )
                 is PokemonListUiState.Error -> ErrorContent(
@@ -136,7 +134,7 @@ private fun PokemonList(
     pokemonList: List<PokemonListItem>,
     favourites: Set<Int>,
     onPokemonClick: (Int) -> Unit,
-    onFavouriteClick: (Int, String) -> Unit
+    onFavouriteClick: (Int, String, Boolean) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -144,11 +142,12 @@ private fun PokemonList(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(pokemonList, key = { it.id }) { pokemon ->
+            val isFavourite = favourites.contains(pokemon.id)
             PokemonListItem(
                 pokemon = pokemon,
-                isFavourite = favourites.contains(pokemon.id),
+                isFavourite = isFavourite,
                 onClick = { onPokemonClick(pokemon.id) },
-                onFavouriteClick = { onFavouriteClick(pokemon.id, pokemon.name) }
+                onFavouriteClick = { onFavouriteClick(pokemon.id, pokemon.name, isFavourite) }
             )
         }
     }

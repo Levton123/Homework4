@@ -1,10 +1,9 @@
-package com.example.pokedex.ui.viewmodel
+package com.example.pokedex.ui
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokedex.data.repository.PokemonRepository
-import com.example.pokedex.ui.state.PokemonDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +14,6 @@ import javax.inject.Inject
 @HiltViewModel
 class PokemonDetailViewModel @Inject constructor(
     private val repository: PokemonRepository,
-    // SavedStateHandle позволяет Hilt передать аргументы навигации в VM без фабрики
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,7 +29,7 @@ class PokemonDetailViewModel @Inject constructor(
     fun onEvent(event: PokemonDetailEvent) {
         when (event) {
             is PokemonDetailEvent.Retry -> loadPokemonDetail()
-            is PokemonDetailEvent.ToggleFavourite -> Unit // обрабатывается в ListVM
+            is PokemonDetailEvent.ToggleFavourite -> Unit
         }
     }
 
@@ -39,14 +37,8 @@ class PokemonDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = PokemonDetailUiState.Loading
             repository.getPokemonDetail(pokemonId).fold(
-                onSuccess = { pokemon ->
-                    _uiState.value = PokemonDetailUiState.Success(pokemon = pokemon)
-                },
-                onFailure = { error ->
-                    _uiState.value = PokemonDetailUiState.Error(
-                        error.message ?: "Failed to load Pokemon details"
-                    )
-                }
+                onSuccess = { pokemon -> _uiState.value = PokemonDetailUiState.Success(pokemon) },
+                onFailure = { error -> _uiState.value = PokemonDetailUiState.Error(error.message ?: "Failed to load Pokemon details") }
             )
         }
     }

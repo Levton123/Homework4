@@ -1,4 +1,4 @@
-package com.example.pokedex.ui.state
+package com.example.pokedex.ui
 
 import com.example.pokedex.data.model.PokemonDetail
 import com.example.pokedex.data.model.PokemonListItem
@@ -16,10 +16,6 @@ sealed interface PokemonListUiState {
 
 sealed interface PokemonDetailUiState {
     data object Loading : PokemonDetailUiState
-    // Исправление: isFavourite убран — Detail VM не управляет избранным.
-    // Состояние избранного живёт только в PokemonListViewModel.
-    data class Success(
-        val pokemon: PokemonDetail
-    ) : PokemonDetailUiState
+    data class Success(val pokemon: PokemonDetail) : PokemonDetailUiState
     data class Error(val message: String) : PokemonDetailUiState
 }

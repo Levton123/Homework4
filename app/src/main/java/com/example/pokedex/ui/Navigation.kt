@@ -1,4 +1,4 @@
-package com.example.pokedex.ui.navigation
+package com.example.pokedex.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -10,13 +10,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.pokedex.ui.screen.FavouritesScreen
-import com.example.pokedex.ui.screen.PokemonDetailScreen
-import com.example.pokedex.ui.screen.PokemonListScreen
-import com.example.pokedex.ui.viewmodel.PokemonDetailEvent
-import com.example.pokedex.ui.viewmodel.PokemonDetailViewModel
-import com.example.pokedex.ui.viewmodel.PokemonListEvent
-import com.example.pokedex.ui.viewmodel.PokemonListViewModel
 
 sealed class Screen(val route: String) {
     data object PokemonList : Screen("pokemon_list")
@@ -30,7 +23,6 @@ sealed class Screen(val route: String) {
 fun PokemonNavigation(
     navController: NavHostController = rememberNavController()
 ) {
-    // Hilt сам управляет lifecycle VM — shared VM живёт пока жив NavHost
     val sharedListViewModel: PokemonListViewModel = hiltViewModel()
 
     NavHost(
@@ -39,16 +31,11 @@ fun PokemonNavigation(
     ) {
         composable(Screen.PokemonList.route) {
             val uiState by sharedListViewModel.uiState.collectAsState()
-
             PokemonListScreen(
                 uiState = uiState,
                 onEvent = sharedListViewModel::onEvent,
-                onPokemonClick = { pokemonId ->
-                    navController.navigate(Screen.PokemonDetail.createRoute(pokemonId))
-                },
-                onFavouritesClick = {
-                    navController.navigate(Screen.Favourites.route)
-                }
+                onPokemonClick = { navController.navigate(Screen.PokemonDetail.createRoute(it)) },
+                onFavouritesClick = { navController.navigate(Screen.Favourites.route) }
             )
         }
 
@@ -57,26 +44,21 @@ fun PokemonNavigation(
             arguments = listOf(navArgument("pokemonId") { type = NavType.IntType })
         ) { backStackEntry ->
             val pokemonId = backStackEntry.arguments?.getInt("pokemonId") ?: return@composable
-
-            // Hilt читает pokemonId из SavedStateHandle автоматически
             val detailViewModel: PokemonDetailViewModel = hiltViewModel()
             val detailUiState by detailViewModel.uiState.collectAsState()
             val favourites by sharedListViewModel.favourites.collectAsState()
             val isFavourite = favourites.contains(pokemonId)
-
-            // Нужно имя для сохранения в Room — берём из детального состояния
-            val pokemonName = (detailUiState as? com.example.pokedex.ui.state.PokemonDetailUiState.Success)
-                ?.pokemon?.name ?: ""
+            val pokemonName = (detailUiState as? PokemonDetailUiState.Success)?.pokemon?.name ?: ""
 
             PokemonDetailScreen(
                 uiState = detailUiState,
                 isFavourite = isFavourite,
                 onEvent = { event ->
                     when (event) {
-                        is PokemonDetailEvent.ToggleFavourite ->
-                            sharedListViewModel.onEvent(
-                                PokemonListEvent.ToggleFavourite(pokemonId, pokemonName)
-                            )
+                        is PokemonDetailEvent.ToggleFavourite -> {
+                            if (isFavourite) sharedListViewModel.onEvent(PokemonListEvent.RemoveFavourite(pokemonId))
+                            else sharedListViewModel.onEvent(PokemonListEvent.AddFavourite(pokemonId, pokemonName))
+                        }
                         else -> detailViewModel.onEvent(event)
                     }
                 },
@@ -86,16 +68,10 @@ fun PokemonNavigation(
 
         composable(Screen.Favourites.route) {
             val favourites by sharedListViewModel.favourites.collectAsState()
-
             FavouritesScreen(
                 favouriteIds = favourites,
-                onPokemonClick = { pokemonId ->
-                    navController.navigate(Screen.PokemonDetail.createRoute(pokemonId))
-                },
-                onRemoveFavourite = { pokemonId ->
-                    // Для удаления имя не нужно — toggleFavourite проверит isFavourite в Room
-                    sharedListViewModel.onEvent(PokemonListEvent.ToggleFavourite(pokemonId, ""))
-                },
+                onPokemonClick = { navController.navigate(Screen.PokemonDetail.createRoute(it)) },
+                onRemoveFavourite = { sharedListViewModel.onEvent(PokemonListEvent.RemoveFavourite(it)) },
                 onBackClick = { navController.navigateUp() }
             )
         }
