@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FavouriteDao {
 
-    /** Возвращает Flow со всеми id избранных — UI автоматически обновится при любом изменении. */
     @Query("SELECT pokemonId FROM favourites ORDER BY addedAt DESC")
     fun getFavouriteIds(): Flow<List<Int>>
 

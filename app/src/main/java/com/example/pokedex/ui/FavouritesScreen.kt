@@ -1,4 +1,4 @@
-package com.example.pokedex.ui.screen
+package com.example.pokedex.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -51,10 +51,7 @@ fun FavouritesScreen(
 
 @Composable
 private fun EmptyFavouritesContent(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(16.dp)
@@ -94,7 +91,7 @@ private fun FavouritesList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(favouriteIds.toList()) { pokemonId ->
+        items(favouriteIds.toList(), key = { it }) { pokemonId ->
             FavouritePokemonItem(
                 pokemonId = pokemonId,
                 onClick = { onPokemonClick(pokemonId) },
@@ -126,9 +123,7 @@ private fun FavouritePokemonItem(
                 contentDescription = "Pokemon $pokemonId",
                 modifier = Modifier.size(64.dp)
             )
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Pokemon #${pokemonId.toString().padStart(3, '0')}",
@@ -136,7 +131,6 @@ private fun FavouritePokemonItem(
                     fontWeight = FontWeight.Bold
                 )
             }
-
             IconButton(onClick = onRemoveFavourite) {
                 Icon(
                     imageVector = Icons.Default.Favorite,
