@@ -1,65 +1,54 @@
 ФИО: Еремеев Александр Николаевич
 Группа: Б9123-09.03.01 цд
-Приложение PokeDex построено на базе PokeAPI (https://pokeapi.co/).
-PokeAPI - это бесплатный RESTful API, который предоставляет полную информацию о покемонах из всех поколений игр Pokemon. API возвращает данные о:
-1. Списке всех покемонов (имя, ID, изображение)
-2. Детальной информации о каждом покемоне (характеристики, способности, типы, рост, вес)
-3. Спрайтах и официальных артворках покемонов
-4. Эволюциях, движениях и других игровых данных
+API: PokeAPI (https://pokeapi.co/) — бесплатный открытый RESTful API без ключей
 
-Инструкция по запуску:
+Что хранится в Room
 
-1. Клонировать репозиторий
-git clone <repository-url>
-  cd pokedex
-   
-2. Открыть проект в Android Studio
-File → Open → выбрать папку проекта
+Таблица: favourites
+- pokemonId (Int, Primary Key) — ID покемона
+- pokemonName (String) — имя покемона
+- addedAt (Long) — время добавления, для сортировки
 
-3.Синхронизировать Gradle
-Android Studio автоматически предложит синхронизировать
-Или вручную: File → Sync Project with Gradle Files
+Сценарий: Favourites — избранное переживает перезапуск приложения.
+FavouriteRepository предоставляет Flow из Room DAO. Любое изменение в БД автоматически уведомляет PokemonListViewModel через подписку — без ручной синхронизации.
 
-4.Запустить приложение
-Нажать кнопку "Run" (зеленый треугольник)
-Выбрать эмулятор или подключенное устройство
+Как проверить
 
-API ключ не требуется - PokeAPI является полностью открытым и бесплатным сервисом без необходимости регистрации или получения ключей доступа.
+1. Запустить приложение
+2. Добавить Pikachu (№25) и Charizard (№6) в избранное — нажать на сердечко в списке или на экране деталей
+3. Перейти на экран Избранного — оба покемона отображаются
+4. Полностью закрыть приложение
+5. Запустить приложение снова
+6. Открыть Избранное — Pikachu и Charizard остались
 
-<img width="359" height="624" alt="image" src="https://github.com/user-attachments/assets/5469b614-625d-4741-b0ed-1a656f08f543" /> (Скриншот Loading)
+Архитектура (что изменилось в ДЗ4 по сравнению с ДЗ3)
 
-<img width="354" height="627" alt="image" src="https://github.com/user-attachments/assets/b24f6b97-6484-43c4-b332-3fe7a0fa24cd" /> (Скриншот Listscreen)
+- Hilt — все зависимости (Retrofit, OkHttp, Room, Repository) создаются в AppModule и инжектируются через @Inject constructor
+- @HiltViewModel — PokemonListViewModel и PokemonDetailViewModel получают зависимости без фабрик
+- SavedStateHandle в PokemonDetailViewModel — Hilt автоматически передаёт pokemonId из аргументов навигации
+- FavouriteRepository — новый репозиторий, единственный источник правды для избранного, работает через Room Flow
+- PokemonApplication — @HiltAndroidApp
+- ViewModelFactories.kt — удалён (Hilt заменяет)
+- RetrofitClient.kt — удалён (перенесён в AppModule)
 
-<img width="358" height="599" alt="image" src="https://github.com/user-attachments/assets/0792d778-9b26-4b39-8dd3-ce5a9dbc9f56" /> (Скриншот Detail)
+Скриншоты
 
-<img width="351" height="600" alt="image" src="https://github.com/user-attachments/assets/57afc98d-f534-46b8-a0ed-516d8f145016" /> (Скриншот Favourite)
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/0a07168a-85b8-4e38-9de6-c96d8cadacf9" />
 
-<img width="352" height="625" alt="image" src="https://github.com/user-attachments/assets/18d00956-2e38-4732-9342-5cf3df83e42a" /> (Скриншот Error, с кнопкой Retry)
+(скриншот Loading)
 
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/f6fc6896-8735-4030-bd50-6d140d1f2aa1" />
 
-Чеклист
-Обязательное:
-1. 3 экрана: List, Detail (с ID в route), Favourites
-2. UiState (Loading, Success, Error, Empty)
-3. ViewModel + viewModelScope
-4. Stateless UI (state + onEvent)
-5. Repository между ViewModel и Retrofit
-6. Suspend функции для сетевых запросов
-7. Все UI состояния реализованы
-8. Избранное (add/remove)
-9. Избранное сохраняется при повороте экрана
-10. Compose + Material3
-11. Navigation Compose
-12. Retrofit + kotlinx.serialization
-13. Debounce поиска (Job + delay 300ms)
+(скриншот списка)
 
-Бонусы:
-1. Экран Favourites как отдельный route
-2. Кнопка Refresh
-3. Кэш результата в памяти (Repository)
-4. Логирование запросов (OkHttp logging interceptor)
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/24a4bff3-6125-4935-b0ec-50b1250da60c" />
 
-Примечания:
-1. Для работы приложения требуется интернет-соединение
-2. При первом запуске приложение загрузит список первых 151 покемона (первое поколение)
-3. Все запросы логируются в Logcat (тег: OkHttp)
+(скриншот детального экрана)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/6dd3aa10-5ba9-4288-9f96-99afe934abdb" />
+
+(скриншот избранного)
+
+<img width="576" height="1280" alt="image" src="https://github.com/user-attachments/assets/2781a63a-2fb7-4448-adb2-533cf35860a0" />
+
+(скриншот ошибки с кнопкой Retry)
