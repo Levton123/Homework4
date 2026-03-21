@@ -7,18 +7,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FavouriteRepository @Inject constructor(
+open class FavouriteRepository @Inject constructor(
     private val dao: FavouriteDao
 ) {
-    val favouriteIds: Flow<List<Int>> = dao.getFavouriteIds()
+    open val favouriteIds: Flow<List<Int>> = dao.getFavouriteIds()
 
-    suspend fun addFavourite(pokemonId: Int, pokemonName: String) {
+    open suspend fun addFavourite(pokemonId: Int, pokemonName: String) {
         dao.addFavourite(FavouriteEntity(pokemonId = pokemonId, pokemonName = pokemonName))
     }
 
-    suspend fun removeFavourite(pokemonId: Int) {
+    open suspend fun removeFavourite(pokemonId: Int) {
         dao.removeFavourite(pokemonId)
     }
 
-    suspend fun isFavourite(pokemonId: Int): Boolean = dao.isFavourite(pokemonId)
+    open suspend fun isFavourite(pokemonId: Int): Boolean = dao.isFavourite(pokemonId)
 }

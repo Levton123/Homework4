@@ -1,0 +1,109 @@
+package com.example.pokedex
+
+import android.content.Context
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.pokedex.data.db.PokedexDatabase
+import com.example.pokedex.data.repository.FavouriteRepository
+import com.example.pokedex.ui.PokemonListEvent
+import com.example.pokedex.ui.PokemonListUiState
+import com.example.pokedex.ui.PokemonListViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
+class PokemonListViewModelIntegrationTest {
+
+    private lateinit var db: PokedexDatabase
+    private lateinit var favouriteRepository: FavouriteRepository
+    private lateinit var fakePokemonRepo: FakePokemonRepository
+    private lateinit var viewModel: PokemonListViewModel
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, PokedexDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        favouriteRepository = FavouriteRepository(db.favouriteDao())
+        fakePokemonRepo = FakePokemonRepository()
+        viewModel = PokemonListViewModel(fakePokemonRepo, favouriteRepository)
+    }
+
+    @After
+    fun tearDown() {
+        db.close()
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun addFavourite_persists_inRoom() = runTest {
+        advanceUntilIdle()
+
+        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        advanceUntilIdle()
+
+        assertTrue(favouriteRepository.isFavourite(1))
+    }
+
+    @Test
+    fun removeFavourite_removesFromRoom() = runTest {
+        advanceUntilIdle()
+
+        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        advanceUntilIdle()
+        assertTrue(favouriteRepository.isFavourite(1))
+
+        viewModel.onEvent(PokemonListEvent.RemoveFavourite(1))
+        advanceUntilIdle()
+
+        assertFalse(favouriteRepository.isFavourite(1))
+    }
+
+    @Test
+    fun addSameFavouriteTwice_doesNotDuplicateInRoom() = runTest {
+        advanceUntilIdle()
+
+        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        advanceUntilIdle()
+        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        advanceUntilIdle()
+
+        assertTrue(favouriteRepository.isFavourite(1))
+        val ids = db.favouriteDao().getFavouriteIds().first()
+        assertEquals(1, ids.size)
+    }
+
+    @Test
+    fun errorState_thenRetry_transitionsToSuccess() = runTest {
+        fakePokemonRepo.pokemonListResult = Result.failure(Exception("Timeout"))
+        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository)
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is PokemonListUiState.Error)
+
+        fakePokemonRepo.pokemonListResult = Result.success(FakePokemonRepository.defaultPokemonList())
+        vm.onEvent(PokemonListEvent.Retry)
+        advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertTrue("Expected Success but was $state", state is PokemonListUiState.Success)
+    }
+}
