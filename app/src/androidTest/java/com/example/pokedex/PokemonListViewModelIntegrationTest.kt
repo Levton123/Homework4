@@ -32,7 +32,6 @@ class PokemonListViewModelIntegrationTest {
     private lateinit var db: PokedexDatabase
     private lateinit var favouriteRepository: FavouriteRepository
     private lateinit var fakePokemonRepo: FakePokemonRepository
-    private lateinit var viewModel: PokemonListViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
@@ -44,20 +43,20 @@ class PokemonListViewModelIntegrationTest {
             .build()
         favouriteRepository = FavouriteRepository(db.favouriteDao())
         fakePokemonRepo = FakePokemonRepository()
-        viewModel = PokemonListViewModel(fakePokemonRepo, favouriteRepository)
     }
 
     @After
     fun tearDown() {
-        db.close()
         Dispatchers.resetMain()
+        db.close()
     }
 
     @Test
     fun addFavourite_persists_inRoom() = runTest {
+        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository, testDispatcher)
         advanceUntilIdle()
 
-        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        vm.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
         advanceUntilIdle()
 
         assertTrue(favouriteRepository.isFavourite(1))
@@ -65,13 +64,14 @@ class PokemonListViewModelIntegrationTest {
 
     @Test
     fun removeFavourite_removesFromRoom() = runTest {
+        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository, testDispatcher)
         advanceUntilIdle()
 
-        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        vm.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
         advanceUntilIdle()
         assertTrue(favouriteRepository.isFavourite(1))
 
-        viewModel.onEvent(PokemonListEvent.RemoveFavourite(1))
+        vm.onEvent(PokemonListEvent.RemoveFavourite(1))
         advanceUntilIdle()
 
         assertFalse(favouriteRepository.isFavourite(1))
@@ -79,11 +79,12 @@ class PokemonListViewModelIntegrationTest {
 
     @Test
     fun addSameFavouriteTwice_doesNotDuplicateInRoom() = runTest {
+        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository, testDispatcher)
         advanceUntilIdle()
 
-        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        vm.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
         advanceUntilIdle()
-        viewModel.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
+        vm.onEvent(PokemonListEvent.AddFavourite(1, "bulbasaur"))
         advanceUntilIdle()
 
         assertTrue(favouriteRepository.isFavourite(1))
@@ -94,7 +95,7 @@ class PokemonListViewModelIntegrationTest {
     @Test
     fun errorState_thenRetry_transitionsToSuccess() = runTest {
         fakePokemonRepo.pokemonListResult = Result.failure(Exception("Timeout"))
-        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository)
+        val vm = PokemonListViewModel(fakePokemonRepo, favouriteRepository, testDispatcher)
         advanceUntilIdle()
 
         assertTrue(vm.uiState.value is PokemonListUiState.Error)
@@ -103,7 +104,6 @@ class PokemonListViewModelIntegrationTest {
         vm.onEvent(PokemonListEvent.Retry)
         advanceUntilIdle()
 
-        val state = vm.uiState.value
-        assertTrue("Expected Success but was $state", state is PokemonListUiState.Success)
+        assertTrue(vm.uiState.value is PokemonListUiState.Success)
     }
 }

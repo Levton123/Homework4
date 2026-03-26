@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokedex.data.repository.PokemonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PokemonDetailViewModel @Inject constructor(
     private val repository: PokemonRepository,
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
     private val pokemonId: Int = checkNotNull(savedStateHandle["pokemonId"])
@@ -34,7 +37,7 @@ class PokemonDetailViewModel @Inject constructor(
     }
 
     private fun loadPokemonDetail() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _uiState.value = PokemonDetailUiState.Loading
             repository.getPokemonDetail(pokemonId).fold(
                 onSuccess = { pokemon -> _uiState.value = PokemonDetailUiState.Success(pokemon) },

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.pokedex.data.repository.FavouriteRepository
 import com.example.pokedex.data.repository.PokemonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PokemonListViewModel @Inject constructor(
     private val pokemonRepository: PokemonRepository,
-    private val favouriteRepository: FavouriteRepository
+    private val favouriteRepository: FavouriteRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow<PokemonListUiState>(PokemonListUiState.Loading)
@@ -45,14 +48,17 @@ class PokemonListViewModel @Inject constructor(
         when (event) {
             is PokemonListEvent.Search -> performSearch(event.query)
             is PokemonListEvent.Retry -> loadPokemonList()
-            is PokemonListEvent.Refresh -> { searchJob?.cancel(); loadPokemonList() }
+            is PokemonListEvent.Refresh -> {
+                searchJob?.cancel()
+                loadPokemonList()
+            }
             is PokemonListEvent.AddFavourite -> addFavourite(event.pokemonId, event.pokemonName)
             is PokemonListEvent.RemoveFavourite -> removeFavourite(event.pokemonId)
         }
     }
 
     private fun loadPokemonList() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _listState.value = PokemonListUiState.Loading
             pokemonRepository.getPokemonList().fold(
                 onSuccess = { list ->
@@ -68,7 +74,7 @@ class PokemonListViewModel @Inject constructor(
 
     private fun performSearch(query: String) {
         searchJob?.cancel()
-        searchJob = viewModelScope.launch {
+        searchJob = viewModelScope.launch(dispatcher) {
             delay(300)
             pokemonRepository.searchPokemon(query).fold(
                 onSuccess = { results ->
@@ -83,11 +89,11 @@ class PokemonListViewModel @Inject constructor(
     }
 
     private fun addFavourite(pokemonId: Int, pokemonName: String) {
-        viewModelScope.launch { favouriteRepository.addFavourite(pokemonId, pokemonName) }
+        viewModelScope.launch(dispatcher) { favouriteRepository.addFavourite(pokemonId, pokemonName) }
     }
 
     private fun removeFavourite(pokemonId: Int) {
-        viewModelScope.launch { favouriteRepository.removeFavourite(pokemonId) }
+        viewModelScope.launch(dispatcher) { favouriteRepository.removeFavourite(pokemonId) }
     }
 }
 
